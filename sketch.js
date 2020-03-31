@@ -1,12 +1,12 @@
 /// <reference path="./p5.d/p5.global-mode.d.ts" />
 
 let board;
-let game;
+let ai;
 
 function setup() {
 	createCanvas(400, 400);
-	game = new Checkers();
-	board = new Board(400, game)
+	ai = new AI();
+	board = new Board(400, ai)
 }
 
 function mouseClicked() {

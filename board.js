@@ -1,29 +1,25 @@
 const EMPTY = "EMPTY";
-
 const BLUE = "BLUE";
-
 const RED = "RED";
 
 class Board {
     board = [];
     size;
     scale;
-    game;
+    ai;
     selected;
-    highLighted;
+    possibleMoves;
 
-    constructor(size, game) {
+    constructor(size, ai) {
         this.size = size;
         this.scale = size / 8;
-        this.game = game;
+        this.ai = ai;
         this.selected = null;
-        this.highLighted = [];
+        this.possibleMoves = [];
 
         this.fillEmptyBoard();
         this.setupBlue();
         this.setupRed();
-
-        // this.game.fillStartingPositions((x,y,v) => this.set(x,y,v))
     }
 
     setupBlue() {
@@ -62,23 +58,39 @@ class Board {
         const x = Math.floor(xPos / this.scale);
         const y = Math.floor(yPos / this.scale);
 
-        // this.game.click(x, y)
-        this.selectCell(x, y)
-    }
+        let possibleMove = this.possibleMoves.find(m => m.target.x === x && m.target.y === y);
+        if (possibleMove) {
+            this.move(possibleMove);
 
-    selectCell(x, y) {
-        this.highLighted = [];
-        if (this.currentPlayerPiece(x, y)) {
-            this.selected = coordsToIndex(x, y);
-            this.getMoves(x, y).forEach(m => {
-                this.setHighlighted(m.x, m.y)
-            })
+            const aiResp = this.ai.getMove(this);
+            if (aiResp) {
+                this.move(aiResp)
+            }
         } else {
-            this.selected = null;
+            this.selectCell(x, y)
         }
     }
 
-    currentPlayerPiece(x, y) {
+    selectCell(x, y) {
+        this.possibleMoves = [];
+        this.selected = null;
+
+        if (this.isCurrentPlayerPiece(x, y)) {
+            this.selected = coordsToIndex(x, y);
+            this.getMoves(x, y, true).forEach(m => {
+                this.possibleMoves.push(m)
+            });
+            this.getJumps(x, y, true).forEach(m => {
+                this.possibleMoves.push(m)
+            })
+        }
+    }
+
+    getPlayerPieces(piece) {
+        return this.board.filter(c => c.value === piece)
+    }
+
+    isCurrentPlayerPiece(x, y) {
         return this.get(x, y) === BLUE;
     }
 
@@ -96,7 +108,7 @@ class Board {
         this.board.forEach((cell, i) => {
             if (i === this.selected) {
                 fill(100, 0, 0)
-            } else if (this.highLighted.includes(i)) {
+            } else if (this.possibleMoves.find(m => m.target.x === indexToX(i) && m.target.y === indexToY(i))) {
                 fill(200, 0, 0);
             } else if ((i + cell.y) % 2) {
                 fill(230);
@@ -121,21 +133,60 @@ class Board {
         ellipse(cell.x * this.scale + (this.scale * 0.5), cell.y * this.scale + (this.scale * 0.5), this.scale * 0.5)
     }
 
-    getMoves(x, y) {
+    getJumps(x, y, isPlayer) {
+        const potentialJumps = [
+            {x: x + 2, y: isPlayer ? y + 2 : y - 2},
+            {x: x - 2, y: isPlayer ? y + 2 : y - 2}
+        ];
+
+        return potentialJumps
+            .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
+            .filter(m => this.get(m.x, m.y) === EMPTY)
+            .filter(m => {
+                let middleValue = this.get((m.x + x) / 2, (m.y + y) / 2);
+                return middleValue === (isPlayer ? RED : BLUE);
+            })
+            .map(m => ({
+                type: "JUMP",
+                source: {x: x, y: y},
+                middle: {x: (m.x + x) / 2, y: (m.y + y) / 2},
+                target: m
+            }))
+
+    }
+
+    getMoves(x, y, isPlayer) {
         const potentialMoves = [
-            {x: x + 1, y: y + 1},
-            {x: x - 1, y: y + 1}
+            {x: x + 1, y: isPlayer ? y + 1 : y - 1},
+            {x: x - 1, y: isPlayer ? y + 1 : y - 1}
         ];
 
         return potentialMoves
+            .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
             .filter(m => this.get(m.x, m.y) === EMPTY)
-            .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0);
+            .map(m => ({
+                type: "MOVE",
+                source: {x: x, y: y},
+                target: m
+            }))
     }
 
-    setHighlighted(x, y) {
-        this.highLighted.push(coordsToIndex(x, y))
+    move(m) {
+        const piece = this.get(m.source.x, m.source.y);
+
+        if (m.type === "JUMP") {
+            this.set(m.middle.x, m.middle.y, EMPTY)
+        }
+
+        this.set(m.source.x, m.source.y, EMPTY);
+        this.set(m.target.x, m.target.y, piece);
+
+        this.possibleMoves = [];
+        this.selected = null;
     }
 
 }
 
 const coordsToIndex = (x, y) => x + (y * 8);
+const indexToX = i => i % 8;
+const indexToY = i => Math.floor(i / 8);
