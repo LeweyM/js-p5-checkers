@@ -3,188 +3,129 @@ const BLUE = "BLUE";
 const RED = "RED";
 
 class Board {
-    board = [];
+    game;
+    pieces;
     size;
-    scale;
-    ai;
+    squareSize;
     selected;
     possibleMoves;
+    moveQueue;
 
-    constructor(size, ai) {
+    constructor(size, game) {
+        this.game = game;
         this.size = size;
-        this.scale = size / 8;
-        this.ai = ai;
+        this.squareSize = size / 8;
         this.selected = null;
         this.possibleMoves = [];
-
-        this.fillEmptyBoard();
-        this.setupBlue();
-        this.setupRed();
-    }
-
-    setupBlue() {
-        for (let x = 0; x < 8; x++) {
-            for (let y = 5; y < 8; y++) {
-                if ((x + y) % 2) {
-                    this.set(x, y, RED)
-                }
-            }
-        }
-    }
-
-    setupRed() {
-        for (let x = 0; x < 8; x++) {
-            for (let y = 0; y < 3; y++) {
-                if ((x + y) % 2) {
-                    this.set(x, y, BLUE)
-                }
-            }
-        }
-    }
-
-    fillEmptyBoard() {
-        for (let y = 0; y < 8; y++) {
-            for (let x = 0; x < 8; x++) {
-                this.board.push({
-                    x: x,
-                    y: y,
-                    value: EMPTY
-                })
-            }
-        }
+        this.moveQueue = [];
+        this.pieces = this.game.getSetupPieces()
+            .map(c => new Piece(c.x, c.y, c.value, this.squareSize, () => this.startNextTransition()))
     }
 
     click(xPos, yPos) {
-        const x = Math.floor(xPos / this.scale);
-        const y = Math.floor(yPos / this.scale);
+        const x = this.xFromMouse(xPos);
+        const y = this.yFromMouse(yPos);
 
-        let possibleMove = this.possibleMoves.find(m => m.target.x === x && m.target.y === y);
-        if (possibleMove) {
-            this.move(possibleMove);
-
-            const aiResp = this.ai.getMove(this);
-            if (aiResp) {
-                this.move(aiResp)
-            }
-        } else {
+        if (this.isPossibleMove(indexToX(this.selected), indexToY(this.selected), x, y)) {
+            let move = this.possibleMoves.find(m => m.target.x === x && m.target.y === y);
+            this.addMovesToQueue(this.game.makeMove(move));
+            this.startNextTransition();
+            this.unselectCell();
+        } else if (this.isPlayerPiece(x, y)) {
             this.selectCell(x, y)
+        } else {
+            this.unselectCell();
         }
+    }
+
+    unselectCell() {
+        this.selected = null;
+        this.possibleMoves = [];
+    }
+
+    yFromMouse(yPos) {
+        return Math.floor(yPos / this.squareSize);
+    }
+
+    xFromMouse(xPos) {
+        return Math.floor(xPos / this.squareSize);
+    }
+
+    isPlayerPiece(x, y) {
+        const piece = this.getPiece(x, y);
+        return piece && piece.color === BLUE
     }
 
     selectCell(x, y) {
-        this.possibleMoves = [];
-        this.selected = null;
-
-        if (this.isCurrentPlayerPiece(x, y)) {
+        if (this.isPlayerPiece(x, y)) {
             this.selected = coordsToIndex(x, y);
-            this.getMoves(x, y, true).forEach(m => {
-                this.possibleMoves.push(m)
-            });
-            this.getJumps(x, y, true).forEach(m => {
-                this.possibleMoves.push(m)
-            })
+            this.possibleMoves = this.game.getPossibleMoves(x,y);
         }
     }
 
-    getPlayerPieces(piece) {
-        return this.board.filter(c => c.value === piece)
+    isPossibleMove(x, y, tx, ty) {
+        return this.possibleMoves.some(m => {
+            return m.target.x === tx
+                && m.target.y === ty
+                && m.source.x === x
+                && m.source.y === y
+        });
     }
 
-    isCurrentPlayerPiece(x, y) {
-        return this.get(x, y) === BLUE;
+    getPiece(x, y) {
+        return this.pieces.find(p => p.x === x && p.y === y)
     }
 
-    get(x, y) {
-        const i = (y * 8) + x;
-        return this.board[i].value
-    }
-
-    set(x, y, value) {
-        const i = (y * 8) + x;
-        this.board[i].value = value
-    }
 
     draw() {
-        this.board.forEach((cell, i) => {
-            if (i === this.selected) {
-                fill(100, 0, 0)
-            } else if (this.possibleMoves.find(m => m.target.x === indexToX(i) && m.target.y === indexToY(i))) {
-                fill(200, 0, 0);
-            } else if ((i + cell.y) % 2) {
-                fill(230);
-            } else {
-                fill(20);
+        this.drawBoard();
+        this.pieces.forEach(piece => piece.draw());
+    }
+
+    drawBoard() {
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                if (coordsToIndex(x, y) === this.selected) {
+                    fill(100, 0, 0)
+                } else if (this.possibleMoves.find(m => m.target.x === x && m.target.y === y)) {
+                    fill(200, 0, 0);
+                } else if ((x + y) % 2) {
+                    fill(230);
+                } else {
+                    fill(20);
+                }
+                rect(x * this.squareSize, y * this.squareSize, this.squareSize, this.squareSize);
             }
-            rect(cell.x * this.scale, cell.y * this.scale, this.scale, this.scale);
-
-            if (cell.value === BLUE) {
-                fill(0, 0, 255);
-                this.drawChecker(cell);
-            } else if (cell.value === RED) {
-                fill(255, 0, 0);
-                this.drawChecker(cell);
-            }
-        })
-    }
-
-    drawChecker(cell) {
-        ellipse(cell.x * this.scale + (this.scale * 0.5), cell.y * this.scale + (this.scale * 0.5), this.scale * 0.7);
-        noFill();
-        ellipse(cell.x * this.scale + (this.scale * 0.5), cell.y * this.scale + (this.scale * 0.5), this.scale * 0.5)
-    }
-
-    getJumps(x, y, isPlayer) {
-        const potentialJumps = [
-            {x: x + 2, y: isPlayer ? y + 2 : y - 2},
-            {x: x - 2, y: isPlayer ? y + 2 : y - 2}
-        ];
-
-        return potentialJumps
-            .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
-            .filter(m => this.get(m.x, m.y) === EMPTY)
-            .filter(m => {
-                let middleValue = this.get((m.x + x) / 2, (m.y + y) / 2);
-                return middleValue === (isPlayer ? RED : BLUE);
-            })
-            .map(m => ({
-                type: "JUMP",
-                source: {x: x, y: y},
-                middle: {x: (m.x + x) / 2, y: (m.y + y) / 2},
-                target: m
-            }))
-
-    }
-
-    getMoves(x, y, isPlayer) {
-        const potentialMoves = [
-            {x: x + 1, y: isPlayer ? y + 1 : y - 1},
-            {x: x - 1, y: isPlayer ? y + 1 : y - 1}
-        ];
-
-        return potentialMoves
-            .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
-            .filter(m => this.get(m.x, m.y) === EMPTY)
-            .map(m => ({
-                type: "MOVE",
-                source: {x: x, y: y},
-                target: m
-            }))
-    }
-
-    move(m) {
-        const piece = this.get(m.source.x, m.source.y);
-
-        if (m.type === "JUMP") {
-            this.set(m.middle.x, m.middle.y, EMPTY)
         }
-
-        this.set(m.source.x, m.source.y, EMPTY);
-        this.set(m.target.x, m.target.y, piece);
-
-        this.possibleMoves = [];
-        this.selected = null;
     }
 
+    startNextTransition() {
+        const nextMove = this.moveQueue.shift();
+        if (!nextMove) {
+            return null;
+        } else {
+            this.movePiece(nextMove);
+        }
+    }
+
+    movePiece(nextMove) {
+        const piece = nextMove.source && this.getPiece(nextMove.source.x, nextMove.source.y);
+        piece.move(nextMove.target.x, nextMove.target.y);
+        if (nextMove.type === "JUMP") {
+            this.removePiece(nextMove.middle.x, nextMove.middle.y);
+        }
+    }
+
+    removePiece(x, y) {
+        const victimIndex = this.pieces.findIndex(p => x === p.x && y === p.y);
+        this.pieces.splice(victimIndex, 1)
+    }
+
+    addMovesToQueue(moves) {
+        for (let move of moves) {
+            this.moveQueue.push(move);
+        }
+    }
 }
 
 const coordsToIndex = (x, y) => x + (y * 8);
