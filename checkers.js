@@ -37,13 +37,27 @@ class Checkers {
 
     // private methods
 
-    move(m, isPlayer) {
-        this.updateBoard(m, isPlayer ? BLUE : RED);
-        if (isPlayer) {
-            return [m, ...(this.getComputerMove())]
+    move(move, isPlayer) {
+        this.updateBoard(move, isPlayer ? BLUE : RED);
+
+        if (this.canDoubleJump(move, isPlayer)) {
+            return [move, ...(this.getRepeatMove(isPlayer)())]
         } else {
-            return [m, ...(this.getHumanMove())]
+            return [move, ...(this.getOpponentMove(isPlayer)())]
         }
+    }
+
+    getOpponentMove(isPlayer) {
+        return isPlayer ? this.getComputerMove.bind(this) : this.getHumanMove.bind(this);
+    }
+
+    getRepeatMove(isPlayer) {
+        return isPlayer ? this.getHumanMove.bind(this) : this.getComputerMove.bind(this);
+    }
+
+    canDoubleJump(move, isPlayer) {
+        let jumps = this.getJumps(move.target.x, move.target.y, isPlayer);
+        return move.type === "JUMP" && jumps.length > 0;
     }
 
     getComputerMove() {

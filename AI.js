@@ -19,7 +19,9 @@ class AI {
         const moves = playerPieces
             .flatMap(p => checkers.getMoves(p.x, p.y));
 
-        return moves && moves[0]
+        const i = floor(random(0, moves.length));
+
+        return moves && moves[i]
     }
 
     // private methods
