@@ -1,3 +1,7 @@
+const PAWN = "PAWN";
+const KING = "KING";
+
+
 class Checkers {
     board;
     ai;
@@ -12,8 +16,8 @@ class Checkers {
         if (forcedPlayerMoves.length > 0) {
             return forcedPlayerMoves.filter(m => m.source.x === x && m.source.y === y)
         } else {
-            const moves = this.getMoves(x, y, true);
-            const jumps = this.getJumps(x, y, true);
+            const moves = this.getMoves(x, y, true, this.getRank(x, y));
+            const jumps = this.getJumps(x, y, true, this.getRank(x, y));
             return jumps.concat(moves)
         }
     }
@@ -22,11 +26,11 @@ class Checkers {
         this.setupBlue();
         this.setupRed();
         return this.board
-            .map((val, i) =>
+            .map((piece, i) =>
                 ({
                     x: indexToX(i),
                     y: indexToY(i),
-                    value: val
+                    value: piece.color
                 }))
             .filter(c => !!c)
     }
@@ -39,11 +43,17 @@ class Checkers {
 
     move(move, isPlayer) {
         this.updateBoard(move, isPlayer ? BLUE : RED);
+        const moves = [move];
 
-        if (this.canDoubleJump(move, isPlayer)) {
-            return [move, ...(this.getRepeatMove(isPlayer)())]
+        if (this.onLastRank(move.target.y, isPlayer)) {
+            this.promote(move.target.x, move.target.y);
+            moves.push({type: "PROMOTE", source: {x: move.target.x, y:move.target.y}})
+        }
+
+        if (this.canDoubleJump(move.target.x, move.target.y, move.type, isPlayer)) {
+            return [...moves, ...(this.getRepeatMove(isPlayer)())]
         } else {
-            return [move, ...(this.getOpponentMove(isPlayer)())]
+            return [...moves, ...(this.getOpponentMove(isPlayer)())]
         }
     }
 
@@ -55,9 +65,9 @@ class Checkers {
         return isPlayer ? this.getHumanMove.bind(this) : this.getComputerMove.bind(this);
     }
 
-    canDoubleJump(move, isPlayer) {
-        let jumps = this.getJumps(move.target.x, move.target.y, isPlayer);
-        return move.type === "JUMP" && jumps.length > 0;
+    canDoubleJump(x, y, type, isPlayer) {
+        let jumps = this.getJumps(x, y, isPlayer, this.getRank(x, y));
+        return type === "JUMP" && jumps.length > 0;
     }
 
     getComputerMove() {
@@ -89,10 +99,12 @@ class Checkers {
     getAllForcedMoves(isPlayer) {
         const forcedMoves = [];
         const color = isPlayer ? BLUE : RED;
-        for (let i = 0; i < this.board.length; i++) {
-            if (this.board[i] === color) {
-                const jumps = this.getJumps(indexToX(i), indexToY(i), isPlayer);
-                forcedMoves.push(...jumps);
+        for (let y = 0; y < 8; y++) {
+            for (let x = 0; x < 8; x++) {
+                if (this.getColor(x, y) === color) {
+                    const jumps = this.getJumps(x, y, isPlayer, this.getRank(x, y));
+                    forcedMoves.push(...jumps);
+                }
             }
         }
         return forcedMoves;
@@ -102,8 +114,9 @@ class Checkers {
         if (move.type === "JUMP") {
             this.set(move.middle.x, move.middle.y, EMPTY)
         }
+        const oldRank = this.getRank(move.source.x, move.source.y);
         this.set(move.source.x, move.source.y, EMPTY);
-        this.set(move.target.x, move.target.y, player);
+        this.set(move.target.x, move.target.y, player, oldRank);
     }
 
     setupBlue() {
@@ -126,17 +139,24 @@ class Checkers {
         }
     }
 
-    getJumps(x, y, isPlayer) {
+    getJumps(x, y, isPlayer, rank) {
         const potentialJumps = [
             {x: x + 2, y: isPlayer ? y + 2 : y - 2},
             {x: x - 2, y: isPlayer ? y + 2 : y - 2}
         ];
 
+        const kingJumps = [
+            {x: x + 2, y: isPlayer ? y - 2 : y + 2},
+            {x: x - 2, y: isPlayer ? y - 2 : y + 2}
+        ];
+
+        if (rank === KING) potentialJumps.push(...kingJumps);
+
         return potentialJumps
             .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
-            .filter(m => this.get(m.x, m.y) === EMPTY)
+            .filter(m => this.getColor(m.x, m.y) === EMPTY)
             .filter(m => {
-                let middleValue = this.get((m.x + x) / 2, (m.y + y) / 2);
+                let middleValue = this.getColor((m.x + x) / 2, (m.y + y) / 2);
                 return middleValue === (isPlayer ? RED : BLUE);
             })
             .map(m => ({
@@ -148,15 +168,22 @@ class Checkers {
 
     }
 
-    getMoves(x, y, isPlayer) {
+    getMoves(x, y, isPlayer, rank) {
         const potentialMoves = [
             {x: x + 1, y: isPlayer ? y + 1 : y - 1},
             {x: x - 1, y: isPlayer ? y + 1 : y - 1}
         ];
 
+        const kingMoves = [
+            {x: x + 1, y: isPlayer ? y - 1 : y + 1},
+            {x: x - 1, y: isPlayer ? y - 1 : y + 1}
+        ];
+
+        if (rank === KING) potentialMoves.push(...kingMoves);
+
         return potentialMoves
             .filter(m => m.x < 8 && m.x >= 0 && m.y < 8 && m.y >= 0)
-            .filter(m => this.get(m.x, m.y) === EMPTY)
+            .filter(m => this.getColor(m.x, m.y) === EMPTY)
             .map(m => ({
                 type: "MOVE",
                 source: {x: x, y: y},
@@ -164,13 +191,33 @@ class Checkers {
             }))
     }
 
-    set(x, y, value) {
+    set(x, y, value, rank) {
         const i = (y * 8) + x;
-        this.board[i] = value
+        this.board[i] = {
+            color: value,
+            rank: rank || PAWN
+        }
     }
 
-    get(x, y) {
+    promote(x, y) {
         const i = (y * 8) + x;
-        return this.board[i] || EMPTY
+        this.board[i].rank = KING
+    }
+
+    getColor(x, y) {
+        const i = (y * 8) + x;
+        const checker = this.board[i];
+        return checker ? checker.color : EMPTY
+    }
+
+    onLastRank(y, isPlayer) {
+        const lastRank = isPlayer ? 7 : 0;
+        return y === lastRank;
+    }
+
+    getRank(x, y) {
+        const i = (y * 8) + x;
+        const checker = this.board[i];
+        return checker.rank
     }
 }
