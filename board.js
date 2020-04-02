@@ -18,12 +18,18 @@ class Board {
         this.selected = null;
         this.possibleMoves = [];
         this.animationQueue = [];
+        this.setupBoard();
+    }
+
+    setupBoard() {
         this.pieces = this.game.getSetupPieces()
             .map(c => new Piece(c.x, c.y, c.value, this.squareSize, () => this.startNextTransition()))
     }
 
     click(xPos, yPos) {
-        this.action(this.xFromMouse(xPos), this.yFromMouse(yPos));
+        if (this.game.isWinner() === null) {
+            this.action(this.xFromMouse(xPos), this.yFromMouse(yPos));
+        }
     }
 
     action(x, y) {
@@ -78,9 +84,7 @@ class Board {
     }
 
     addMovesToQueue(moves) {
-        for (let move of moves) {
-            this.animationQueue.push(move);
-        }
+        for (let move of moves) this.animationQueue.push(move);
         this.startNextTransition();
     }
 
@@ -107,11 +111,14 @@ class Board {
     }
 
     startNextTransition() {
-        const nextMove = this.animationQueue.shift();
-        if (!nextMove) {
-            return null;
+        const nextEvent = this.animationQueue.shift();
+        if (!nextEvent) return null;
+
+        if (nextEvent.type === "GAME_OVER") {
+            alert(`winner is ${nextEvent.winner} bobo.`);
+            this.setupBoard()
         } else {
-            this.movePiece(nextMove);
+            this.movePiece(nextEvent);
         }
     }
 

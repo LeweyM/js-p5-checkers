@@ -23,6 +23,7 @@ class Checkers {
     }
 
     getSetupPieces() {
+        this.board = [];
         this.setupBlue();
         this.setupRed();
         return this.board
@@ -39,6 +40,16 @@ class Checkers {
         return this.move(move, true);
     }
 
+    isWinner() {
+        if (this.board.filter(p => p.color === RED).length < 1) {
+            return BLUE;
+        } else if (this.board.filter(p => p.color === BLUE).length < 1) {
+            return RED;
+        } else {
+            return null
+        }
+    }
+
     // private methods
 
     move(move, isPlayer) {
@@ -50,19 +61,24 @@ class Checkers {
             moves.push({type: "PROMOTE", source: {x: move.target.x, y:move.target.y}})
         }
 
+        const winner = this.isWinner();
+        if (winner) {
+            moves.push({type: "GAME_OVER", winner: winner})
+        }
+
         if (this.canDoubleJump(move.target.x, move.target.y, move.type, isPlayer)) {
-            return [...moves, ...(this.getRepeatMove(isPlayer)())]
+            return [...moves, ...(this.getRepeatMove(isPlayer))]
         } else {
-            return [...moves, ...(this.getOpponentMove(isPlayer)())]
+            return [...moves, ...(this.getOpponentMove(isPlayer))]
         }
     }
 
     getOpponentMove(isPlayer) {
-        return isPlayer ? this.getComputerMove.bind(this) : this.getHumanMove.bind(this);
+        return isPlayer ? this.getComputerMove.bind(this)() : this.getHumanMove.bind(this)();
     }
 
     getRepeatMove(isPlayer) {
-        return isPlayer ? this.getHumanMove.bind(this) : this.getComputerMove.bind(this);
+        return isPlayer ? this.getHumanMove.bind(this)() : this.getComputerMove.bind(this)();
     }
 
     canDoubleJump(x, y, type, isPlayer) {
