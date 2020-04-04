@@ -74,7 +74,7 @@ class Board {
     selectCell(x, y) {
         if (this.isPlayerPiece(x, y)) {
             this.selected = {x: x, y: y};
-            this.possibleMoves = this.game.getPossibleMoves(x,y);
+            this.possibleMoves = this.game.getPossibleMoves(x,y, BLUE);
         }
     }
 
@@ -97,11 +97,11 @@ class Board {
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
                 if (this.isSelected(x, y)) {
-                    fill(100, 0, 0)
+                    fill(100, 100, 0)
                 } else if (this.possibleMoves.find(m => m.target.x === x && m.target.y === y)) {
                     fill(200, 0, 0);
                 } else if ((x + y) % 2) {
-                    fill(230);
+                    fill(255 - (x*20), 255 - (y*20), 255 - ((y+x)*20));
                 } else {
                     fill(20);
                 }
@@ -112,6 +112,7 @@ class Board {
 
     startNextTransition() {
         const nextEvent = this.animationQueue.shift();
+        console.log(nextEvent);
         if (!nextEvent) return null;
 
         if (nextEvent.type === "GAME_OVER") {

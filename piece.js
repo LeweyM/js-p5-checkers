@@ -1,5 +1,3 @@
-const ANIMATIONDURATION = 20;
-
 class Piece {
     color;
     rank;
@@ -35,8 +33,8 @@ class Piece {
 
     draw() {
         if (this.isAnimating) {
-            this.drawChecker(this.translatedX(), this.translatedY());
             this.tick();
+            this.drawChecker(this.translatedX(), this.translatedY());
         } else {
             this.drawChecker(this.x, this.y);
         }
@@ -77,7 +75,7 @@ class Piece {
 
     fillChecker() {
         if (this.color === BLUE) {
-            fill(0, 0, 255);
+            fill(50, 50, 255);
         } else if (this.color === RED) {
             fill(255, 0, 0);
         }
@@ -85,6 +83,7 @@ class Piece {
 
     drawPawn(x, y) {
         const halfSquare = this.squareSize / 2;
+        strokeWeight(1);
         ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.7);
         noFill();
         ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.5);
@@ -92,9 +91,10 @@ class Piece {
 
     drawKing(x, y) {
         const halfSquare = this.squareSize / 2;
+        strokeWeight(2);
         ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.8);
         noFill();
         ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.6);
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.5);
+        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.4);
     }
 }
