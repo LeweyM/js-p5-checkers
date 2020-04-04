@@ -9,7 +9,7 @@ function setup() {
 	durationSlider = createSlider(0, 40, 5);
 	const redAi = new AI(RED);
 	const blueAi = new AI(BLUE);
-	const checkers = new Checkers(redAi, blueAi);
+	const checkers = new Checkers(null, blueAi);
 	board = new Board(400, checkers)
 }
 

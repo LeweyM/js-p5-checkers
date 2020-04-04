@@ -10,6 +10,7 @@ class Board {
     selected;
     possibleMoves;
     animationQueue;
+    humanPlayer;
 
     constructor(size, game) {
         this.game = game;
@@ -19,6 +20,7 @@ class Board {
         this.possibleMoves = [];
         this.animationQueue = [];
         this.start();
+        this.humanPlayer = RED;
     }
 
     start() {
@@ -36,7 +38,7 @@ class Board {
 
     action(x, y) {
         if (this.isValidMove(x, y)) {
-            this.addMovesToQueue(this.game.makeMove(this.getMove(x, y)));
+            this.addMovesToQueue(this.game.makeMove(this.getMove(x, y), this.humanPlayer));
             this.unselectCell();
         } else if (this.isPlayerPiece(x, y)) {
             this.selectCell(x, y)
@@ -62,7 +64,7 @@ class Board {
 
     isPlayerPiece(x, y) {
         const piece = this.getPiece(x, y);
-        return piece && piece.color === BLUE
+        return piece && piece.color === this.humanPlayer;
     }
 
     getPiece(x, y) {
@@ -76,7 +78,7 @@ class Board {
     selectCell(x, y) {
         if (this.isPlayerPiece(x, y)) {
             this.selected = {x: x, y: y};
-            this.possibleMoves = this.game.getPossibleMoves(x,y, BLUE);
+            this.possibleMoves = this.game.getPossibleMoves(x,y, this.humanPlayer);
         }
     }
 

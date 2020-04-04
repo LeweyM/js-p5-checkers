@@ -43,8 +43,8 @@ class Checkers {
         }
     }
 
-    makeMove(move) {
-        return this.move(move, BLUE);
+    makeMove(move, player) {
+        return this.move(move, player);
     }
 
     isWinner() {
