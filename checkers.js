@@ -13,18 +13,7 @@ class Checkers {
         this.board = [];
     }
 
-    getPossibleMoves(x, y, player) {
-        const forcedPlayerMoves = this.getAllForcedMoves(player);
-        if (forcedPlayerMoves.length > 0) {
-            return forcedPlayerMoves.filter(m => m.source.x === x && m.source.y === y)
-        } else {
-            const moves = this.getMoves(x, y, player, this.getRank(x, y));
-            const jumps = this.getJumps(x, y, player, this.getRank(x, y));
-            return jumps.concat(moves)
-        }
-    }
-
-    getSetupPieces() {
+    getInitialPositions() {
         this.board = [];
         this.setupRed();
         this.setupBlue();
@@ -36,6 +25,22 @@ class Checkers {
                     value: piece.color
                 }))
             .filter(c => !!c)
+    }
+
+    startGame() {
+        this.getInitialPositions();
+        return this.getAiOrHumanMove(this.blueAi, BLUE)
+    }
+
+    getPossibleMoves(x, y, player) {
+        const forcedPlayerMoves = this.getAllForcedMoves(player);
+        if (forcedPlayerMoves.length > 0) {
+            return forcedPlayerMoves.filter(m => m.source.x === x && m.source.y === y)
+        } else {
+            const moves = this.getMoves(x, y, player, this.getRank(x, y));
+            const jumps = this.getJumps(x, y, player, this.getRank(x, y));
+            return jumps.concat(moves)
+        }
     }
 
     makeMove(move) {
@@ -115,14 +120,13 @@ class Checkers {
         }
     }
 
-    getAiOrHumanMove(blueAi, player) {
-        if (!blueAi) {
+    getAiOrHumanMove(ai, player) {
+        if (!ai) {
             return []
         } else {
-            const aiMove = blueAi.getMove(this);
+            const aiMove = ai.getMove(this);
 
             if (!aiMove) {
-                console.log("draw?");
                 return [];
             } else {
                 return this.move(aiMove, player)

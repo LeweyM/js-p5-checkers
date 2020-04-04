@@ -18,12 +18,14 @@ class Board {
         this.selected = null;
         this.possibleMoves = [];
         this.animationQueue = [];
-        this.setupBoard();
+        this.start();
     }
 
-    setupBoard() {
-        this.pieces = this.game.getSetupPieces()
+    start() {
+        this.pieces = this.game.getInitialPositions()
             .map(c => new Piece(c.x, c.y, c.value, this.squareSize, () => this.startNextTransition()))
+        const initialMoves = this.game.startGame();
+        this.addMovesToQueue(initialMoves);
     }
 
     click(xPos, yPos) {
@@ -117,7 +119,7 @@ class Board {
 
         if (nextEvent.type === "GAME_OVER") {
             alert(`winner is ${nextEvent.winner} bobo.`);
-            this.setupBoard()
+            this.start()
         } else {
             this.movePiece(nextEvent);
         }
