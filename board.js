@@ -120,7 +120,7 @@ class Board {
         if (!nextEvent) return null;
 
         if (nextEvent.type === "GAME_OVER") {
-            alert(`winner is ${nextEvent.winner} bobo.`);
+            winnerCounter[nextEvent.winner] += 1;
             this.start()
         } else {
             this.movePiece(nextEvent);
