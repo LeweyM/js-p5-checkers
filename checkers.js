@@ -1,6 +1,8 @@
 const PAWN = "PAWN";
 const KING = "KING";
-
+const EMPTY = "EMPTY";
+const BLUE = "BLUE";
+const RED = "RED";
 
 class Checkers {
     board;
@@ -250,3 +252,8 @@ class Checkers {
 
     get = (x, y) => this.board[this.coordsToIndex(x, y)] || {color: EMPTY, rank: null};
 }
+
+const indexToX = i => i % 8;
+const indexToY = i => Math.floor(i / 8);
+
+module.exports = Checkers;

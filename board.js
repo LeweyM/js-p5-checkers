@@ -1,7 +1,3 @@
-const EMPTY = "EMPTY";
-const BLUE = "BLUE";
-const RED = "RED";
-
 class Board {
     game;
     pieces;
@@ -152,6 +148,3 @@ class Board {
         return Math.floor(xPos / this.squareSize);
     }
 }
-
-const indexToX = i => i % 8;
-const indexToY = i => Math.floor(i / 8);

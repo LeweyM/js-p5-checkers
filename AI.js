@@ -16,8 +16,10 @@ class AI {
         const moves = availableMoves.filter(m => m.type === "MOVE");
 
 
-        return moves && moves[(floor(random(0, moves.length)))]
+        return moves && moves[(Math.floor(Math.random() * moves.length))]
     }
 
     // private methods
 }
+
+module.exports = AI;
