@@ -1,0 +1,17 @@
+{
+  "name": "checkers",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "runner/gameRunner.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node -r esm runner/gameRunner.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "esm": "^3.2.25"
+  }
+}

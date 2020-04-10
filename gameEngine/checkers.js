@@ -1,18 +1,20 @@
-const PAWN = "PAWN";
-const KING = "KING";
-const EMPTY = "EMPTY";
-const BLUE = "BLUE";
-const RED = "RED";
+export const PAWN = "PAWN";
+export const KING = "KING";
+export const EMPTY = "EMPTY";
+export const BLUE = "BLUE";
+export const RED = "RED";
 
-class Checkers {
+export class Checkers {
     board;
     redAi;
     blueAi;
+    movesSinceLastTake;
 
     constructor(redAi, blueAi) {
         this.redAi = redAi;
         this.blueAi = blueAi;
         this.board = [];
+        this.movesSinceLastTake = 0;
     }
 
     getInitialPositions() {
@@ -30,6 +32,7 @@ class Checkers {
     }
 
     startGame() {
+        this.movesSinceLastTake = 0;
         this.getInitialPositions();
         return this.getAiOrHumanMove(BLUE)
     }
@@ -54,7 +57,9 @@ class Checkers {
             return BLUE;
         } else if (this.board.filter(p => p.color === BLUE).length < 1) {
             return RED;
-        } else {
+        } else if (this.movesSinceLastTake > 40) {
+            return "DRAW";
+        }else {
             return null
         }
     }
@@ -63,10 +68,8 @@ class Checkers {
 
     availablePlayerMoves(player) {
         const pieces = this.getPieces(player);
-
         const jumps = pieces
             .flatMap(p => this.getJumps(p.x, p.y, p.color, p.rank));
-
         const moves = pieces
             .flatMap(p => this.getMoves(p.x, p.y, p.color, p.rank));
 
@@ -98,9 +101,12 @@ class Checkers {
             return moves.concat({type: "GAME_OVER", winner: winner});
         }
 
+        if (move.type === "JUMP") this.movesSinceLastTake = 0;
+
         if (this.canDoubleJump(move.target.x, move.target.y, move.type, player)) {
             return [...moves, ...(this.getMove(player))]
         } else {
+            this.movesSinceLastTake++;
             return [...moves, ...(this.getMove(this.opponent(player)))]
         }
     }
@@ -186,12 +192,10 @@ class Checkers {
             {x: x + 2, y: player === BLUE ? y + 2 : y - 2},
             {x: x - 2, y: player === BLUE ? y + 2 : y - 2}
         ];
-
         const kingJumps = [
             {x: x + 2, y: player === BLUE ? y - 2 : y + 2},
             {x: x - 2, y: player === BLUE ? y - 2 : y + 2}
         ];
-
         if (rank === KING) potentialJumps.push(...kingJumps);
 
         return potentialJumps
@@ -215,12 +219,10 @@ class Checkers {
             {x: x + 1, y: player === BLUE ? y + 1 : y - 1},
             {x: x - 1, y: player === BLUE ? y + 1 : y - 1}
         ];
-
         const kingMoves = [
             {x: x + 1, y: player === BLUE ? y - 1 : y + 1},
             {x: x - 1, y: player === BLUE ? y - 1 : y + 1}
         ];
-
         if (rank === KING) potentialMoves.push(...kingMoves);
 
         return potentialMoves
@@ -255,5 +257,3 @@ class Checkers {
 
 const indexToX = i => i % 8;
 const indexToY = i => Math.floor(i / 8);
-
-module.exports = Checkers;

@@ -1,4 +1,6 @@
-class Piece {
+import {PAWN, BLUE, KING, RED} from "../gameEngine/checkers.js";
+
+export default class Piece {
     color;
     rank;
     x;
@@ -8,16 +10,17 @@ class Piece {
     prevX;
     prevY;
     squareSize;
+    s;
     onTransitionFinished;
 
-    constructor(x, y, color, squareSize, onTransitionFinished) {
+    constructor(s, x, y, color, squareSize, onTransitionFinished) {
+        this.s = s;
         this.x = x;
         this.y = y;
         this.color = color;
         this.rank = PAWN;
         this.squareSize = squareSize;
         this.onTransitionFinished = onTransitionFinished;
-        this.animationFrame = ANIMATIONDURATION;
         this.isAnimating = false;
     }
 
@@ -31,10 +34,10 @@ class Piece {
         this.onTransitionFinished();
     }
 
-    draw() {
+    draw(ms) {
         if (this.isAnimating) {
-            this.tick();
-            this.drawChecker(this.translatedX(), this.translatedY());
+            this.tick(ms);
+            this.drawChecker(this.translatedX(ms), this.translatedY(ms));
         } else {
             this.drawChecker(this.x, this.y);
         }
@@ -42,12 +45,12 @@ class Piece {
 
     //private methods
 
-    translatedX = () => this.prevX + ((this.x - this.prevX) / ANIMATIONDURATION) * this.animationFrame;
-    translatedY = () => this.prevY + ((this.y - this.prevY) / ANIMATIONDURATION) * this.animationFrame;
+    translatedX = (duration) => this.prevX + ((this.x - this.prevX) / duration) * this.animationFrame;
+    translatedY = (duration) => this.prevY + ((this.y - this.prevY) / duration) * this.animationFrame;
 
-    tick() {
+    tick(duration) {
         this.animationFrame++;
-        if (this.animationFrame > ANIMATIONDURATION) {
+        if (this.animationFrame > duration) {
             this.isAnimating = false;
             this.onTransitionFinished();
         }
@@ -75,26 +78,26 @@ class Piece {
 
     fillChecker() {
         if (this.color === BLUE) {
-            fill(50, 50, 255);
+            this.s.fill(50, 50, 255);
         } else if (this.color === RED) {
-            fill(255, 0, 0);
+            this.s.fill(255, 0, 0);
         }
     }
 
     drawPawn(x, y) {
         const halfSquare = this.squareSize / 2;
-        strokeWeight(1);
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.7);
-        noFill();
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.5);
+        this.s.strokeWeight(1);
+        this.s.ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.7);
+        this.s.noFill();
+        this.s.ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.5);
     }
 
     drawKing(x, y) {
         const halfSquare = this.squareSize / 2;
-        strokeWeight(2);
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.8);
-        noFill();
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.6);
-        ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.4);
+        this.s.strokeWeight(2);
+        this.s.ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.8);
+        this.s.noFill();
+        this.s.ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.6);
+        this.s.ellipse(x * this.squareSize + halfSquare, y * this.squareSize + halfSquare, this.squareSize * 0.4);
     }
 }

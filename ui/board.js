@@ -1,27 +1,33 @@
-class Board {
+import Piece from "./piece.js";
+import {winnerCounter, ANIMATION_DURATION} from "./sketch.js";
+import {RED} from "../gameEngine/checkers.js";
+
+export default class Board {
     game;
     pieces;
     size;
     squareSize;
+    s;
     selected;
     possibleMoves;
     animationQueue;
     humanPlayer;
 
-    constructor(size, game) {
+    constructor(s, size, game) {
+        this.s = s;
         this.game = game;
         this.size = size;
         this.squareSize = size / 8;
         this.selected = null;
         this.possibleMoves = [];
         this.animationQueue = [];
+        this.humanPlayer = null;
         this.start();
-        this.humanPlayer = RED;
     }
 
     start() {
         this.pieces = this.game.getInitialPositions()
-            .map(c => new Piece(c.x, c.y, c.value, this.squareSize, () => this.startNextTransition()))
+            .map(c => new Piece(this.s, c.x, c.y, c.value, this.squareSize, () => this.startNextTransition()));
         const initialMoves = this.game.startGame();
         this.addMovesToQueue(initialMoves);
     }
@@ -90,22 +96,22 @@ class Board {
 
     draw() {
         this.drawBoard();
-        this.pieces.forEach(piece => piece.draw());
+        this.pieces.forEach(piece => piece.draw(ANIMATION_DURATION));
     }
 
     drawBoard() {
         for (let y = 0; y < 8; y++) {
             for (let x = 0; x < 8; x++) {
                 if (this.isSelected(x, y)) {
-                    fill(100, 100, 0)
+                    this.s.fill(100, 100, 0)
                 } else if (this.possibleMoves.find(m => m.target.x === x && m.target.y === y)) {
-                    fill(200, 0, 0);
+                    this.s.fill(200, 0, 0);
                 } else if ((x + y) % 2) {
-                    fill(255 - (x*20), 255 - (y*20), 255 - ((y+x)*20));
+                    this.s.fill(255 - (x*20), 255 - (y*20), 255 - ((y+x)*20));
                 } else {
-                    fill(20);
+                    this.s.fill(20);
                 }
-                rect(x * this.squareSize, y * this.squareSize, this.squareSize, this.squareSize);
+                this.s.rect(x * this.squareSize, y * this.squareSize, this.squareSize, this.squareSize);
             }
         }
     }

@@ -1,7 +1,10 @@
-const AI = require('../AI');
-const Checkers = require('../checkers');
+import AI from "../gameEngine/AI.js";
+import {Checkers} from "../gameEngine/checkers.js";
+import OneAheadAI from "../gameEngine/OneAheadAI.js";
 
 const redAi = new AI("RED");
+const blueOneAhead = new OneAheadAI("BLUE");
+const redOneAhead = new OneAheadAI("RED");
 const blueAi = new AI("BLUE");
 const checkers = new Checkers(redAi, blueAi);
 
